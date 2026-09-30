@@ -60,6 +60,13 @@ WavData WavReader::Load(const std::string& filePath) {
     const uint8_t* dataPtr = nullptr;
     uint32_t dataSize = 0;
 
+    std::vector<ChunkInfo> chunks;
+
+    // Walk every top level chunk to the end of the file. This is what
+    // lets an unrecognized chunk such as Soundswell's "SWEL" sit before,
+    // between, or after "fmt " and "data" without breaking the parser:
+    // any chunk not specifically handled below is simply skipped over
+    // using its own declared size, and still recorded in `chunks`.
     while (pos + 8 <= buffer.size()) {
         char chunkId[5] = {0};
         std::memcpy(chunkId, buffer.data() + pos, 4);
@@ -71,7 +78,9 @@ WavData WavReader::Load(const std::string& filePath) {
             break;
         }
 
-        if (std::memcmp(chunkId, "fmt ", 4) == 0) {
+        chunks.push_back(ChunkInfo{std::string(chunkId), chunkSize});
+
+        if (!haveFmt && std::memcmp(chunkId, "fmt ", 4) == 0) {
             if (chunkSize < 16) {
                 throw std::runtime_error("WavReader: fmt chunk too small in: " + filePath);
             }
@@ -81,7 +90,7 @@ WavData WavReader::Load(const std::string& filePath) {
             sampleRate = ReadU32LE(fmt + 4);
             bitsPerSample = ReadU16LE(fmt + 14);
             haveFmt = true;
-        } else if (std::memcmp(chunkId, "data", 4) == 0) {
+        } else if (!haveData && std::memcmp(chunkId, "data", 4) == 0) {
             dataPtr = buffer.data() + chunkDataStart;
             dataSize = chunkSize;
             haveData = true;
@@ -90,10 +99,6 @@ WavData WavReader::Load(const std::string& filePath) {
         // Chunks are padded to even sizes.
         size_t advance = chunkSize + (chunkSize % 2);
         pos = chunkDataStart + advance;
-
-        if (haveFmt && haveData) {
-            break;
-        }
     }
 
     if (!haveFmt) {
@@ -129,6 +134,7 @@ WavData WavReader::Load(const std::string& filePath) {
     result.sampleRate = static_cast<int>(sampleRate);
     result.bitsPerSample = bitsPerSample;
     result.channels = numChannels;
+    result.chunks = std::move(chunks);
     result.samples.reserve(numFrames);
 
     for (uint32_t frame = 0; frame < numFrames; ++frame) {

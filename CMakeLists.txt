@@ -17,3 +17,15 @@ add_executable(VoiceQC
 )
 
 target_include_directories(VoiceQC PRIVATE include)
+
+# WaveformViewer is a plain Win32 GUI app (File > Open a WAV file, see
+# its waveform drawn with GDI). It only builds on Windows, since it uses
+# the Win32 API directly, so it is skipped entirely on Mac/Linux.
+if(WIN32)
+    add_executable(WaveformViewer WIN32
+        apps/WaveformViewer/main.cpp
+        src/WavReader.cpp
+    )
+    target_include_directories(WaveformViewer PRIVATE include)
+    target_link_libraries(WaveformViewer PRIVATE user32 gdi32 comdlg32)
+endif()
