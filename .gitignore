@@ -1,0 +1,38 @@
+# Visual Studio
+.vs/
+*.sln.docstates
+*.user
+*.suo
+
+# Build output (Visual Studio + CMake)
+bin/
+obj/
+x64/
+x86/
+Debug/
+Release/
+build/
+out/
+
+# VS Code (keep shared settings, ignore machine specific ones)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/c_cpp_properties.json
+.vscode/ipch/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+compile_commands.json
+CMakeUserPresets.json
+
+# vcpkg (if used later)
+vcpkg_installed/
+
+# OS files
+.DS_Store
+Thumbs.db
